@@ -1,0 +1,45 @@
+# Azure DevOps pipeline: build, test, and optional Docker build
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - feature/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  PYTHON_VERSION: '3.11'
+  DOCKER_IMAGE_NAME: 'azure-pipeline-demo'
+  # For ACR push (optional), set these as secret variables in Azure DevOps Library or pipeline variables
+  # ACR_LOGIN_SERVER: ''
+  # ACR_USERNAME: ''
+  # ACR_PASSWORD: ''
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(PYTHON_VERSION)'
+  displayName: 'Use Python $(PYTHON_VERSION)'
+
+- script: |
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+  displayName: 'Install dependencies'
+
+- script: |
+    pytest -q
+  displayName: 'Run tests'
+
+# Optional: Build Docker image (uncomment to enable)
+# - script: |
+#     docker build -t $(DOCKER_IMAGE_NAME):$(Build.BuildId) .
+#   displayName: 'Docker build'
+#
+# Optional: Push to ACR
+# - script: |
+#     echo "$(ACR_PASSWORD)" | docker login "$(ACR_LOGIN_SERVER)" -u "$(ACR_USERNAME)" --password-stdin
+#     docker tag $(DOCKER_IMAGE_NAME):$(Build.BuildId) $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_NAME):$(Build.BuildId)
+#     docker push $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_NAME):$(Build.BuildId)
+#   displayName: 'Push to ACR'
